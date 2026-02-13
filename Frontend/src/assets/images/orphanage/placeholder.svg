@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fce4ec;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f48fb1;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bgGradient5)"/>
+  
+  <!-- Child 1 -->
+  <circle cx="100" cy="90" r="18" fill="#f4a460"/>
+  <rect x="92" y="115" width="16" height="35" fill="#ff69b4"/>
+  <rect x="82" y="120" width="36" height="6" fill="#ff69b4"/>
+  
+  <!-- Child 2 -->
+  <circle cx="200" cy="80" r="20" fill="#ffb380"/>
+  <rect x="191" y="105" width="18" height="40" fill="#87ceeb"/>
+  <rect x="180" y="110" width="40" height="7" fill="#87ceeb"/>
+  
+  <!-- Child 3 -->
+  <circle cx="300" cy="95" r="17" fill="#d4a574"/>
+  <rect x="293" y="118" width="14" height="32" fill="#ff69b4"/>
+  <rect x="284" y="122" width="32" height="6" fill="#ff69b4"/>
+  
+  <!-- Heart above -->
+  <path d="M200,40 L210,50 Q215,55 220,50 L230,40 Q215,25 200,40 Q185,25 170,40 L180,50 Q185,55 190,50 Z" fill="#ff6b6b"/>
+  
+  <!-- Text -->
+  <text x="200" y="270" font-size="28" font-weight="bold" text-anchor="middle" fill="#2c3e50">Orphanage Care</text>
+</svg>

@@ -1,0 +1,142 @@
+import mongoose from "mongoose";
+
+const volunteerSchema = new mongoose.Schema({
+  // Link each volunteer application to exactly one logged-in user
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: [true, "User is required"],
+    index: true
+  },
+
+  // --- 1. Personal Information ---
+  fullName: {
+    type: String,
+    required: [true, 'Full Name is required'],
+    trim: true
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    trim: true,
+    lowercase: true,
+    match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, 'Please fill a valid email address']
+  },
+  phone: {
+    type: String,
+    required: [true, 'Phone number is required'],
+    trim: true
+  },
+  dob: {
+    type: Date,
+    required: [true, 'Date of Birth is required']
+  },
+  city: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  state: {
+    type: String,
+    required: true
+  },
+
+  // --- 2. Preferences ---
+  interests: {
+    type: [String], // Array of strings for multi-select checkboxes
+    validate: {
+      validator: function (v) {
+        return v && v.length > 0;
+      },
+      message: 'Select at least one area of interest'
+    }
+  },
+  mode: {
+    type: String,
+    enum: ['On-site', 'Remote', 'Hybrid'],
+    default: 'On-site'
+  },
+  availability: {
+    type: String,
+    enum: ['Weekdays', 'Weekends', 'Flexible']
+  },
+
+  // --- 3. Skills & Experience ---
+  occupation: {
+    type: String,
+    trim: true
+  },
+  education: {
+    type: String,
+    enum: ['High School', 'Undergraduate', 'Postgraduate', 'Other']
+  },
+  skills: {
+    type: String, // Storing comma-separated string from input
+    trim: true
+  },
+
+  // --- 4. Safety & Verification ---
+  idType: {
+    type: String,
+    enum: ['Aadhaar', 'PAN', 'Passport', 'VoterID'],
+    required: [true, 'ID Type is required']
+  },
+  idNumber: {
+    type: String,
+    required: [true, 'ID Number is required'],
+    trim: true
+  },
+  // IMPORTANT: We store the path/URL here, not the file object
+  idImage: {
+    type: String,
+    required: [true, 'ID Image proof is required']
+  },
+  emergencyName: {
+    type: String,
+    trim: true
+  },
+  emergencyPhone: {
+    type: String,
+    trim: true
+  },
+  bgCheck: {
+    type: Boolean,
+    default: false
+  },
+
+  // --- 5. Motivation ---
+  motivation: {
+    type: String,
+    required: [true, 'Motivation is required'],
+    trim: true
+  },
+  declaration: {
+    type: Boolean,
+    required: [true, 'You must agree to the declaration'],
+    validate: {
+      validator: function (v) {
+        return v === true;
+      },
+      message: 'Declaration must be accepted'
+    }
+  },
+
+  // --- System Fields ---
+  status: {
+    type: String,
+    enum: ['Pending', 'Approved', 'Rejected'],
+    default: 'Pending'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Enforce one volunteer application per user account
+volunteerSchema.index(
+  { user: 1 },
+  { unique: true, partialFilterExpression: { user: { $exists: true } } }
+);
+
+export default mongoose.model("Volunteer", volunteerSchema);

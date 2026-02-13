@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fce4ec;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8bbd0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bgGradient2)"/>
+  
+  <!-- Elderly person -->
+  <circle cx="200" cy="70" r="25" fill="#d4a574"/>
+  <!-- Hair -->
+  <path d="M175 65 Q175 45 200 45 Q225 45 225 65" fill="#b8956a"/>
+  <!-- Body -->
+  <rect x="175" y="100" width="50" height="60" rx="5" fill="#8b7355"/>
+  <!-- Arms -->
+  <rect x="160" y="110" width="15" height="50" fill="#d4a574" rx="7"/>
+  <rect x="225" y="110" width="15" height="50" fill="#d4a574" rx="7"/>
+  <!-- Legs -->
+  <rect x="180" y="165" width="12" height="45" fill="#34495e"/>
+  <rect x="208" y="165" width="12" height="45" fill="#34495e"/>
+  <!-- Cane -->
+  <line x1="225" y1="165" x2="240" y2="200" stroke="#8b7355" stroke-width="3"/>
+  <circle cx="242" cy="205" r="5" fill="#8b7355"/>
+  
+  <!-- Text -->
+  <text x="200" y="260" font-size="28" font-weight="bold" text-anchor="middle" fill="#2c3e50">Elderly Care</text>
+</svg>
