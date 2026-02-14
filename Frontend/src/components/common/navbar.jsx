@@ -96,6 +96,7 @@ function Navbar() {
               <li><Link to="/services/orphanage" onClick={() => setDesktopDropdown(false)}>Orphanage Support</Link></li>
               <li><Link to="/services/elderly" onClick={() => setDesktopDropdown(false)}>Elderly Care</Link></li>
               <li><Link to="/services/digital" onClick={() => setDesktopDropdown(false)}>Digital Support</Link></li>
+              <li><Link to="/services/dignified-rites" onClick={() => setDesktopDropdown(false)}>Dignified Rites</Link></li>
             </ul>
           </li>
 
@@ -103,6 +104,8 @@ function Navbar() {
           <li><Link to="/donate">Donate</Link></li>
           <li><Link to="/volunteer">Volunteer</Link></li>
           <li><Link to="/add-ngo">Add Your NGO</Link></li>
+          <li><Link to="/contact">Contact Us</Link></li>
+
         </ul>
 
         {/* Auth / Profile Section */}
@@ -182,6 +185,9 @@ function Navbar() {
               </li>
               <li onClick={() => setMenuOpen(false)}>
                 <Link to="/services/digital">Digital Support</Link>
+              </li>
+              <li onClick={()=> setMenuOpen(false)}>
+                <Link to="/services/dignified-rites">Dignified Rites</Link>
               </li>
             </ul>
           )}

@@ -8,10 +8,12 @@ import Donate from "../pages/donate.jsx";
 import Volunteer from "../pages/volunteer.jsx";
 import AddNGO from "../pages/addNgo.jsx";
 import Login from "../pages/login.jsx";
+import Contact from "../pages/contact.jsx";
 
 import OrphanageSupport from "../pages/services/OrphanageSupport.jsx";
 import ElderlyCare from "../pages/services/ElderlyCare.jsx";
 import DigitalSupport from "../pages/services/DigitalSupport.jsx";
+import DignifiedRitesPage from "../pages/services/DignifiedRitesPage.jsx";
 
 function RequireVolunteerAuth({ children }) {
   const location = useLocation();
@@ -66,6 +68,7 @@ function AppRoutes() {
         <Route path="/services/orphanage" element={<OrphanageSupport />} />
         <Route path="/services/elderly" element={<ElderlyCare />} />
         <Route path="/services/digital" element={<DigitalSupport />} />
+        <Route path="/services/dignified-rites" element={<DignifiedRitesPage />} />
 
         <Route path="/find-ngos" element={<FindNGOs />} />
         <Route path="/donate" element={<Donate />} />
@@ -79,6 +82,7 @@ function AppRoutes() {
         />
         <Route path="/add-ngo" element={<AddNGO />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/contact" element={<Contact />} />
       </Routes>
     </>
   );
