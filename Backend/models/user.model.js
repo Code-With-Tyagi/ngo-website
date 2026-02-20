@@ -12,6 +12,26 @@ const userSchema=new mongoose.Schema({
         lowercase: true,
         trim: true
     },
+    phone: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+    address: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+    city: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+    state: {
+        type: String,
+        trim: true,
+        default: ""
+    },
     authProvider: {
         type: String,
         enum: ["local", "google"],
@@ -37,6 +57,22 @@ const userSchema=new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    emailVerificationOtpHash: {
+        type: String,
+        default: null
+    },
+    emailVerificationOtpExpiresAt: {
+        type: Date,
+        default: null
+    },
+    emailVerificationOtpAttempts: {
+        type: Number,
+        default: 0
+    },
+    emailVerificationOtpLastSentAt: {
+        type: Date,
+        default: null
+    },
     resetPasswordTokenHash: {
         type: String,
         default: null
@@ -50,6 +86,7 @@ const userSchema=new mongoose.Schema({
 })
 
 userSchema.index({ resetPasswordTokenHash: 1, resetPasswordExpiresAt: 1 });
+userSchema.index({ emailVerificationOtpHash: 1, emailVerificationOtpExpiresAt: 1 });
 userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 
 const User=mongoose.model("User",userSchema);

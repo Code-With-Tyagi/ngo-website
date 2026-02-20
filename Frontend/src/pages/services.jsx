@@ -1,11 +1,3 @@
-import React from 'react'
+import ServicePage from "./service.jsx";
 
-const services = () => {
-  return (
-    <div>
-      services
-    </div>
-  )
-}
-
-export default services;
+export default ServicePage;

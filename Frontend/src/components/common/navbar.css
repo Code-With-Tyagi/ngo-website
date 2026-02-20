@@ -92,7 +92,8 @@ body {
 .profile-icon {
   width: 40px;
   height: 40px;
-  background-color: #2e7d32; /* Green background */
+  background-color: #2e7d32;
+  /* Green background */
   color: white;
   border-radius: 50%;
   display: flex;
@@ -112,8 +113,10 @@ body {
 
 /* Fix dropdown position for profile (align right) */
 .profile-menu-right {
-  left: auto !important; /* Override default left:0 */
-  right: 0; /* Align to right edge */
+  left: auto !important;
+  /* Override default left:0 */
+  right: 0;
+  /* Align to right edge */
   min-width: 160px;
   margin-top: 10px;
 }
@@ -126,7 +129,8 @@ body {
   border: none;
   padding: 10px 16px;
   font-size: 16px;
-  color: #d32f2f; /* Red for logout */
+  color: #d32f2f;
+  /* Red for logout */
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
@@ -146,8 +150,9 @@ body {
 }
 
 /* Add padding to bridge gap between trigger and menu */
-.dropdown > span, .dropdown > .profile-icon {
-  display: inline-flex; 
+.dropdown>span,
+.dropdown>.profile-icon {
+  display: inline-flex;
   align-items: center;
 }
 
@@ -189,8 +194,15 @@ body {
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdown-menu li a {
@@ -324,6 +336,7 @@ body {
    ============================================ */
 
 @media (max-width: 992px) {
+
   .navbar-menu,
   .navbar-auth {
     display: none;
@@ -367,39 +380,4 @@ body {
     width: 100vw;
     max-width: none;
   }
-}
-
-/* MOBILE SERVICES ACCORDION */
-.mobile-services-toggle {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  cursor: pointer;
-  color: #2e7d32;
-}
-
-.mobile-services-toggle .arrow {
-  transition: transform 0.3s ease;
-}
-
-.mobile-services-toggle .arrow.open {
-  transform: rotate(180deg);
-}
-
-.mobile-submenu {
-  list-style: none;
-  padding-left: 15px;
-  margin-top: 8px;
-  animation: slideDownMobile 0.3s ease;
-}
-
-.mobile-submenu li {
-  padding: 8px 0;
-  border-bottom: none;
-}
-
-@keyframes slideDownMobile {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
 }

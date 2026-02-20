@@ -3,7 +3,10 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
-import { sendResetPasswordEmail } from "../services/mail.service.js";
+import {
+    sendResetPasswordEmail,
+    sendEmailVerificationOtpEmail
+} from "../services/mail.service.js";
 import "../config/loadEnv.js";
 
 const DEFAULT_BCRYPT_SALT_ROUNDS = 8;
@@ -36,12 +39,32 @@ const toUserPayload = (user) => ({
     id: user._id,
     name: user.name,
     email: user.email,
+    phone: user.phone || "",
+    address: user.address || "",
+    city: user.city || "",
+    state: user.state || "",
     avatar: user.avatar || null,
-    authProvider: user.authProvider || "local"
+    authProvider: user.authProvider || "local",
+    emailVerified: Boolean(user.emailVerified),
+    createdAt: user.createdAt || null
 });
 
 const hashResetToken = (token) =>
     crypto.createHash("sha256").update(token).digest("hex");
+
+const hashOtp = (otp) =>
+    crypto.createHash("sha256").update(String(otp || "")).digest("hex");
+
+const OTP_EXPIRY_MINUTES = Number(process.env.EMAIL_OTP_EXPIRY_MIN || 10);
+const OTP_COOLDOWN_SECONDS = Number(process.env.EMAIL_OTP_RESEND_COOLDOWN_SEC || 60);
+const OTP_MAX_ATTEMPTS = Number(process.env.EMAIL_OTP_MAX_ATTEMPTS || 5);
+
+const getOtpExpiryMinutes = () => Math.max(1, OTP_EXPIRY_MINUTES);
+const getOtpCooldownSeconds = () => Math.max(15, OTP_COOLDOWN_SECONDS);
+const getOtpMaxAttempts = () => Math.max(1, OTP_MAX_ATTEMPTS);
+
+const generateOtpCode = () =>
+    String(crypto.randomInt(100000, 1000000));
 
 const buildResetPasswordUrl = (token) => {
     const base =
@@ -238,7 +261,7 @@ export const googleLogin = async (req, res) => {
             typeof googlePayload.picture === "string"
                 ? googlePayload.picture.trim()
                 : "";
-        const emailVerified = Boolean(googlePayload.email_verified);
+        const googleEmailIsVerified = Boolean(googlePayload.email_verified);
 
         if (!googleId || !cleanEmail) {
             return res.status(400).json({
@@ -247,7 +270,7 @@ export const googleLogin = async (req, res) => {
             });
         }
 
-        if (!emailVerified) {
+        if (!googleEmailIsVerified) {
             return res.status(403).json({
                 success: false,
                 message: "Google email is not verified"
@@ -265,7 +288,7 @@ export const googleLogin = async (req, res) => {
                 authProvider: "google",
                 googleId,
                 avatar: avatar || null,
-                emailVerified: true
+                emailVerified: false
             });
         } else {
             if (user.googleId && user.googleId !== googleId) {
@@ -278,7 +301,6 @@ export const googleLogin = async (req, res) => {
             const updates = {};
             if (!user.googleId) updates.googleId = googleId;
             if (!user.avatar && avatar) updates.avatar = avatar;
-            if (!user.emailVerified) updates.emailVerified = true;
             if (!user.name && cleanName) updates.name = cleanName;
 
             if (Object.keys(updates).length > 0) {
@@ -450,6 +472,400 @@ export const resetPassword = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to reset password",
+            error: error.message
+        });
+    }
+};
+
+// Send email verification OTP /api/email-verification/send-otp
+export const sendEmailVerificationOtp = async (req, res) => {
+    try {
+        if (!req.userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized. Please login first."
+            });
+        }
+
+        const user = await User.findById(req.userId)
+            .select("_id name email emailVerified emailVerificationOtpLastSentAt");
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        if (user.emailVerified) {
+            return res.status(200).json({
+                success: true,
+                message: "Your email is already verified",
+                data: toUserPayload(user)
+            });
+        }
+
+        const cooldownSeconds = getOtpCooldownSeconds();
+        const now = Date.now();
+        const lastSentAt = user.emailVerificationOtpLastSentAt
+            ? new Date(user.emailVerificationOtpLastSentAt).getTime()
+            : 0;
+        const elapsedMs = now - lastSentAt;
+
+        if (lastSentAt && elapsedMs < cooldownSeconds * 1000) {
+            const retryAfterSeconds = Math.ceil((cooldownSeconds * 1000 - elapsedMs) / 1000);
+            return res.status(429).json({
+                success: false,
+                message: `Please wait ${retryAfterSeconds}s before requesting a new OTP`,
+                retryAfterSeconds
+            });
+        }
+
+        const otp = generateOtpCode();
+        const otpHash = hashOtp(otp);
+        const expiryMinutes = getOtpExpiryMinutes();
+        const expiresAt = new Date(now + expiryMinutes * 60 * 1000);
+
+        user.emailVerificationOtpHash = otpHash;
+        user.emailVerificationOtpExpiresAt = expiresAt;
+        user.emailVerificationOtpAttempts = 0;
+        user.emailVerificationOtpLastSentAt = new Date(now);
+        await user.save();
+
+        try {
+            await sendEmailVerificationOtpEmail({
+                name: user.name,
+                email: user.email,
+                otp,
+                expiryMinutes
+            });
+        } catch (mailError) {
+            await User.updateOne(
+                { _id: user._id, emailVerificationOtpHash: otpHash },
+                {
+                    $set: {
+                        emailVerificationOtpHash: null,
+                        emailVerificationOtpExpiresAt: null,
+                        emailVerificationOtpAttempts: 0
+                    }
+                }
+            );
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to send verification OTP right now",
+                error: mailError.message
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `We sent a 6-digit OTP to ${user.email}`,
+            resendCooldownSeconds: cooldownSeconds
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to send verification OTP",
+            error: error.message
+        });
+    }
+};
+
+// Verify email OTP /api/email-verification/verify-otp
+export const verifyEmailOtp = async (req, res) => {
+    try {
+        if (!req.userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized. Please login first."
+            });
+        }
+
+        const otp = String(req.body?.otp || "").trim();
+        if (!/^\d{6}$/.test(otp)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid 6-digit OTP"
+            });
+        }
+
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        if (user.emailVerified) {
+            return res.status(200).json({
+                success: true,
+                message: "Your email is already verified",
+                data: toUserPayload(user)
+            });
+        }
+
+        if (!user.emailVerificationOtpHash || !user.emailVerificationOtpExpiresAt) {
+            return res.status(400).json({
+                success: false,
+                message: "No active OTP found. Please request a new OTP."
+            });
+        }
+
+        if (new Date(user.emailVerificationOtpExpiresAt).getTime() <= Date.now()) {
+            user.emailVerificationOtpHash = null;
+            user.emailVerificationOtpExpiresAt = null;
+            user.emailVerificationOtpAttempts = 0;
+            await user.save();
+
+            return res.status(400).json({
+                success: false,
+                message: "OTP has expired. Please request a new OTP."
+            });
+        }
+
+        const maxAttempts = getOtpMaxAttempts();
+        const currentAttempts = Number(user.emailVerificationOtpAttempts || 0);
+
+        if (currentAttempts >= maxAttempts) {
+            user.emailVerificationOtpHash = null;
+            user.emailVerificationOtpExpiresAt = null;
+            user.emailVerificationOtpAttempts = 0;
+            await user.save();
+
+            return res.status(429).json({
+                success: false,
+                message: "Too many failed OTP attempts. Please request a new OTP."
+            });
+        }
+
+        const isOtpValid = hashOtp(otp) === user.emailVerificationOtpHash;
+        if (!isOtpValid) {
+            user.emailVerificationOtpAttempts = currentAttempts + 1;
+            await user.save();
+
+            const attemptsLeft = Math.max(maxAttempts - user.emailVerificationOtpAttempts, 0);
+            const attemptsMessage = attemptsLeft > 0
+                ? `Invalid OTP. ${attemptsLeft} attempt(s) left.`
+                : "Invalid OTP. No attempts left, please request a new OTP.";
+
+            return res.status(400).json({
+                success: false,
+                message: attemptsMessage,
+                attemptsLeft
+            });
+        }
+
+        user.emailVerified = true;
+        user.emailVerificationOtpHash = null;
+        user.emailVerificationOtpExpiresAt = null;
+        user.emailVerificationOtpAttempts = 0;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Email verified successfully",
+            data: toUserPayload(user)
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to verify OTP",
+            error: error.message
+        });
+    }
+};
+
+// Change current user's password /api/change-password
+export const changePassword = async (req, res) => {
+    try {
+        if (!req.userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized. Please login first."
+            });
+        }
+
+        const currentPassword = String(req.body?.currentPassword || "");
+        const newPassword = String(req.body?.newPassword || "");
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Current password and new password are required"
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "New password must be at least 6 characters long"
+            });
+        }
+
+        if (currentPassword === newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "New password must be different from current password"
+            });
+        }
+
+        const user = await User.findById(req.userId).select("_id password");
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        if (!user.password) {
+            return res.status(400).json({
+                success: false,
+                message: "Password login is not enabled for this account."
+            });
+        }
+
+        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isCurrentPasswordValid) {
+            return res.status(400).json({
+                success: false,
+                message: "Current password is incorrect"
+            });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+
+        await User.updateOne(
+            { _id: user._id },
+            {
+                $set: {
+                    password: hashedNewPassword,
+                    resetPasswordTokenHash: null,
+                    resetPasswordExpiresAt: null
+                }
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Password changed successfully"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to change password",
+            error: error.message
+        });
+    }
+};
+
+// Update current logged-in user profile /api/profile
+export const updateProfile = async (req, res) => {
+    try {
+        if (!req.userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized. Please login first."
+            });
+        }
+
+        const updates = {};
+
+        if (typeof req.body?.name !== "undefined") {
+            const cleanName = String(req.body.name || "").trim();
+            if (!cleanName) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Name is required"
+                });
+            }
+            updates.name = cleanName;
+        }
+
+        if (typeof req.body?.phone !== "undefined") {
+            updates.phone = String(req.body.phone || "").trim();
+        }
+
+        if (typeof req.body?.address !== "undefined") {
+            updates.address = String(req.body.address || "").trim();
+        }
+
+        if (typeof req.body?.city !== "undefined") {
+            updates.city = String(req.body.city || "").trim();
+        }
+
+        if (typeof req.body?.state !== "undefined") {
+            updates.state = String(req.body.state || "").trim();
+        }
+
+        if (req.file?.buffer && req.file?.mimetype) {
+            updates.avatar = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No profile changes provided"
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            data: toUserPayload(user)
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update profile",
+            error: error.message
+        });
+    }
+};
+
+// Get current logged-in user /api/profile
+export const getProfile = async (req, res) => {
+    try {
+        if (!req.userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized. Please login first."
+            });
+        }
+
+        const user = await User.findById(req.userId)
+            .select("_id name email phone address city state avatar authProvider emailVerified createdAt")
+            .lean();
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: toUserPayload(user)
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch profile",
             error: error.message
         });
     }

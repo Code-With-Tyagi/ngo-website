@@ -208,3 +208,48 @@ export const sendResetPasswordEmail = async ({ name, email, resetUrl, expiryMinu
 
   console.log(`Password reset email sent to ${email}`);
 };
+
+export const sendEmailVerificationOtpEmail = async ({
+  name,
+  email,
+  otp,
+  expiryMinutes = 10
+}) => {
+  const { user } = getEmailConfig();
+  const mailer = getTransporter();
+
+  const safeName = escapeHtml(name || "User");
+  const safeOtp = escapeHtml(otp);
+
+  const textTemplate = [
+    `Hi ${name || "User"},`,
+    "",
+    `Your SevaIndia email verification OTP is: ${otp}`,
+    `This OTP will expire in ${expiryMinutes} minutes.`,
+    "",
+    "If you did not request this OTP, please ignore this email."
+  ].join("\n");
+
+  const htmlTemplate = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:620px;margin:0 auto;padding:20px;">
+      <h2 style="margin:0 0 12px;color:#2e7d32;">Verify Your Email</h2>
+      <p style="margin:0 0 10px;">Hi <strong>${safeName}</strong>,</p>
+      <p style="margin:0 0 16px;">Use the OTP below to verify your SevaIndia email address.</p>
+      <div style="margin:0 0 18px;padding:12px 16px;background:#ecfdf3;border:1px solid #bbf7d0;border-radius:10px;display:inline-block;">
+        <span style="font-size:30px;letter-spacing:6px;font-weight:800;color:#166534;">${safeOtp}</span>
+      </div>
+      <p style="margin:0 0 6px;font-size:14px;color:#4b5563;">OTP expires in ${expiryMinutes} minutes.</p>
+      <p style="margin:0;font-size:14px;color:#4b5563;">If you did not request this OTP, please ignore this email.</p>
+    </div>
+  `;
+
+  await mailer.sendMail({
+    from: `"SevaIndia Support" <${user}>`,
+    to: email,
+    subject: "Your SevaIndia email verification OTP",
+    text: textTemplate,
+    html: htmlTemplate
+  });
+
+  console.log(`Email verification OTP sent to ${email}`);
+};

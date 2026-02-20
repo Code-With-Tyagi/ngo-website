@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import './addNgo.css'; 
+import './addNgo.css';
 import {
   Building2,
   MapPin,
@@ -85,29 +85,29 @@ const FileUploadBox = ({ title, name, optional = false, required = false, onFile
 
   return (
     <div className={`upload-group ${error ? 'error' : ''}`}>
-       {/* Hidden Input */}
-       <input 
-          type="file" 
-          ref={fileInputRef} 
-          style={{ display: 'none' }} 
-          onChange={handleFileChange}
-          accept=".pdf,.jpg,.jpeg,.png"
-       />
+      {/* Hidden Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+        accept=".pdf,.jpg,.jpeg,.png"
+      />
 
-       {/* Visual Box */}
-       <div 
-          className={`upload-box ${selectedFile ? 'file-selected' : ''}`} 
-          onClick={handleDivClick}
-        >
+      {/* Visual Box */}
+      <div
+        className={`upload-box ${selectedFile ? 'file-selected' : ''}`}
+        onClick={handleDivClick}
+      >
         <div className="upload-icon-wrapper">
-          {selectedFile ? <CheckCircle2 size={24} className="success-text"/> : <UploadCloud size={24} />}
+          {selectedFile ? <CheckCircle2 size={24} className="success-text" /> : <UploadCloud size={24} />}
         </div>
         <p className="upload-title">
           {title} {required && <span className="required-star">*</span>}
         </p>
         <p className="upload-subtitle">
-          {selectedFile 
-            ? <span className="file-name">{selectedFile.name}</span> 
+          {selectedFile
+            ? <span className="file-name">{selectedFile.name}</span>
             : (optional ? "(Optional) PDF/JPG" : "Click to upload PDF/JPG")
           }
         </p>
@@ -128,7 +128,7 @@ const AddNGOPage = () => {
   const [isLoading, setIsLoading] = useState(false); // New Loading State
   const [apiError, setApiError] = useState(''); // New API Error State
   const [errors, setErrors] = useState({});
-  
+
   // State for Form Data
   const [formData, setFormData] = useState({
     // Step 1
@@ -252,7 +252,7 @@ const AddNGOPage = () => {
     if (step === 3) {
       if (!formData.contactName.trim()) newErrors.contactName = "Contact Name is required";
       if (!formData.contactRole.trim()) newErrors.contactRole = "Role / Designation is required";
-      
+
       if (!formData.phone.trim()) {
         newErrors.phone = "Phone Number is required";
       } else if (!/^\d{10}$/.test(formData.phone.replace(/[^0-9]/g, ""))) {
@@ -314,17 +314,17 @@ const AddNGOPage = () => {
 
       // 1. Create FormData object
       const dataToSend = new FormData();
-      
+
       // 2. Append standard text fields
       Object.keys(formData).forEach(key => {
         // Exclude files and array initially
         const excludeList = ['services', 'registrationCertificate', 'ngoLogo', 'ngoCover', 'certificate12A', 'certificate80G'];
-        
+
         if (!excludeList.includes(key)) {
-           // Ensure we don't send null/undefined as strings
-           if (formData[key] !== null && formData[key] !== undefined) {
-             dataToSend.append(key, formData[key]);
-           }
+          // Ensure we don't send null/undefined as strings
+          if (formData[key] !== null && formData[key] !== undefined) {
+            dataToSend.append(key, formData[key]);
+          }
         }
       });
 
@@ -544,24 +544,24 @@ const AddNGOPage = () => {
                   <div className="social-grid">
                     <div className="social-input-wrapper">
                       <Facebook className="social-icon" size={16} />
-                      <input 
-                        type="text" 
-                        name="facebook" 
-                        value={formData.facebook} 
-                        onChange={handleInputChange} 
-                        placeholder="Facebook URL" 
-                        className="form-input social-input" 
+                      <input
+                        type="text"
+                        name="facebook"
+                        value={formData.facebook}
+                        onChange={handleInputChange}
+                        placeholder="Facebook URL"
+                        className="form-input social-input"
                       />
                     </div>
                     <div className="social-input-wrapper">
                       <Instagram className="social-icon" size={16} />
-                      <input 
-                        type="text" 
-                        name="instagram" 
-                        value={formData.instagram} 
-                        onChange={handleInputChange} 
-                        placeholder="Instagram URL" 
-                        className="form-input social-input" 
+                      <input
+                        type="text"
+                        name="instagram"
+                        value={formData.instagram}
+                        onChange={handleInputChange}
+                        placeholder="Instagram URL"
+                        className="form-input social-input"
                       />
                     </div>
                   </div>
@@ -601,13 +601,13 @@ const AddNGOPage = () => {
 
                 <div className="form-group other-service">
                   <label className="form-label">Other Services (Optional)</label>
-                  <input 
-                    type="text" 
-                    name="otherService" 
-                    value={formData.otherService} 
-                    onChange={handleInputChange} 
-                    className="form-input" 
-                    placeholder="Specify any other services..." 
+                  <input
+                    type="text"
+                    name="otherService"
+                    value={formData.otherService}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    placeholder="Specify any other services..."
                   />
                 </div>
               </div>
@@ -622,43 +622,43 @@ const AddNGOPage = () => {
                 </div>
 
                 <div className="form-grid">
-                  <FileUploadBox 
-                    title="Registration Certificate" 
-                    name="registrationCertificate" 
+                  <FileUploadBox
+                    title="Registration Certificate"
+                    name="registrationCertificate"
                     required
-                    onFileSelect={handleFileSelect} 
+                    onFileSelect={handleFileSelect}
                     selectedFile={formData.registrationCertificate}
                     error={errors.registrationCertificate}
                   />
-                  <FileUploadBox 
-                    title="NGO Logo (High Res)" 
-                    name="ngoLogo" 
+                  <FileUploadBox
+                    title="NGO Logo (High Res)"
+                    name="ngoLogo"
                     required
-                    onFileSelect={handleFileSelect} 
+                    onFileSelect={handleFileSelect}
                     selectedFile={formData.ngoLogo}
                     error={errors.ngoLogo}
                   />
-                  <FileUploadBox 
-                    title="Cover Image (Landscape)" 
-                    name="ngoCover" 
+                  <FileUploadBox
+                    title="Cover Image (Landscape)"
+                    name="ngoCover"
                     optional
-                    onFileSelect={handleFileSelect} 
+                    onFileSelect={handleFileSelect}
                     selectedFile={formData.ngoCover}
                     error={errors.ngoCover}
                   />
-                  <FileUploadBox 
-                    title="12A Certificate" 
-                    name="certificate12A" 
+                  <FileUploadBox
+                    title="12A Certificate"
+                    name="certificate12A"
                     required
-                    onFileSelect={handleFileSelect} 
+                    onFileSelect={handleFileSelect}
                     selectedFile={formData.certificate12A}
                     error={errors.certificate12A}
                   />
-                  <FileUploadBox 
-                    title="80G Certificate" 
-                    name="certificate80G" 
+                  <FileUploadBox
+                    title="80G Certificate"
+                    name="certificate80G"
                     required
-                    onFileSelect={handleFileSelect} 
+                    onFileSelect={handleFileSelect}
                     selectedFile={formData.certificate80G}
                     error={errors.certificate80G}
                   />

@@ -11,8 +11,8 @@ function Footer() {
           <div className="footer-column">
             <h3 className="footer-logo">Seva<span>India</span></h3>
             <p className="footer-about">
-              Empowering communities through transparency and technology. 
-              We bridge the gap between donors and verified NGOs to create 
+              Empowering communities through transparency and technology.
+              We bridge the gap between donors and verified NGOs to create
               lasting impact in Orphanage Care, Elderly Support, and Digital Literacy.
             </p>
             <div className="social-icons">
@@ -38,9 +38,9 @@ function Footer() {
           <div className="footer-column">
             <h4>Our Focus</h4>
             <ul>
-              <li><Link to="/services/orphanage">Orphanage Support</Link></li>
-              <li><Link to="/services/elderly">Elderly Care</Link></li>
-              <li><Link to="/services/digital">Digital India</Link></li>
+              <li><Link to="/services">Orphanage Support</Link></li>
+              <li><Link to="/services">Elderly Care</Link></li>
+              <li><Link to="/services">Digital India</Link></li>
               <li><Link to="/add-ngo">Register NGO</Link></li>
             </ul>
           </div>

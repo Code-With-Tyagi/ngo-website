@@ -4,8 +4,12 @@ import "../config/loadEnv.js";
 // Verify JWT Token
 export const verifyToken = (req, res, next) => {
     try {
-        // Get token from cookies
-        const token = req.cookies.token;
+        // Read token from cookie first, then Authorization header as fallback.
+        const authHeader = String(req.headers.authorization || "");
+        const bearerToken = authHeader.startsWith("Bearer ")
+            ? authHeader.slice(7).trim()
+            : "";
+        const token = req.cookies?.token || bearerToken;
 
         if (!token) {
             return res.status(401).json({

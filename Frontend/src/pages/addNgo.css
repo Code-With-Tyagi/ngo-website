@@ -204,11 +204,13 @@ body {
 .form-input[type="number"]::-webkit-outer-spin-button,
 .form-input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
 .form-input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .form-input:focus {
@@ -245,6 +247,8 @@ body {
 }
 
 .form-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
   appearance: none;
   cursor: pointer;
 }
@@ -567,6 +571,7 @@ body {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -592,7 +597,7 @@ body {
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-body {
     padding: 1.5rem;
   }
@@ -604,7 +609,7 @@ body {
   .hero-content h1 {
     font-size: 2rem;
   }
-  
+
   .services-grid {
     grid-template-columns: 1fr;
   }

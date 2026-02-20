@@ -2,7 +2,7 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect, useLayoutEffect } from "react";
 
 import Home from "../pages/home.jsx";
-import Services from "../pages/services.jsx";
+import ServicePage from "../pages/service.jsx";
 import FindNGOs from "../pages/findNgo.jsx";
 import Donate from "../pages/donate.jsx";
 import Volunteer from "../pages/volunteer.jsx";
@@ -10,11 +10,21 @@ import AddNGO from "../pages/addNgo.jsx";
 import Login from "../pages/login.jsx";
 import Contact from "../pages/contact.jsx";
 import ResetPassword from "../pages/resetPassword.jsx";
+import Profile from "../pages/profile.jsx";
 
-import OrphanageSupport from "../pages/services/OrphanageSupport.jsx";
-import ElderlyCare from "../pages/services/ElderlyCare.jsx";
-import DigitalSupport from "../pages/services/DigitalSupport.jsx";
-import DignifiedRitesPage from "../pages/services/DignifiedRitesPage.jsx";
+import OrphanageEducationPage from "../pages/services/orphanage/education.jsx";
+import Meal from "../pages/services/orphanage/meal.jsx";
+import Health from "../pages/services/orphanage/health.jsx";
+import ElderMeal from "../pages/services/elder/elderMeal.jsx";
+import Living from "../pages/services/elder/living.jsx";
+import Medical from "../pages/services/elder/medical.jsx";
+import HelmetDrive from "../pages/services/community/helmet.jsx";
+import KanyadanYojna from "../pages/services/welfare/kanyadan.jsx";
+import Rites from "../pages/services/welfare/rites.jsx";
+import FreeHealthCamp from "../pages/services/medical/camp.jsx";
+import CancerSupport from "../pages/services/medical/cancer.jsx";
+
+
 
 function RequireVolunteerAuth({ children }) {
   const location = useLocation();
@@ -63,13 +73,20 @@ function AppRoutes() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/services" element={<Services />} />
+        <Route path="/services" element={<ServicePage />} />
 
         {/* Service Routes */}
-        <Route path="/services/orphanage" element={<OrphanageSupport />} />
-        <Route path="/services/elderly" element={<ElderlyCare />} />
-        <Route path="/services/digital" element={<DigitalSupport />} />
-        <Route path="/services/dignified-rites" element={<DignifiedRitesPage />} />
+        <Route path="/services/orphanage/education" element={<OrphanageEducationPage />} />
+        <Route path="/services/orphanage/meal" element={<Meal />} />
+        <Route path="/services/orphanage/health" element={<Health />} />
+        <Route path="/services/elder/meal" element={<ElderMeal />} />
+        <Route path="/services/elder/living" element={<Living />} />
+        <Route path="/services/elder/medical" element={<Medical />} />
+        <Route path="/services/safety/helmet" element={<HelmetDrive />} />
+        <Route path="/services/welfare/kanyadan" element={<KanyadanYojna />} />
+        <Route path="/services/welfare/rites" element={<Rites />} />
+        <Route path="/services/medical/camp" element={<FreeHealthCamp />} />
+        <Route path="/services/medical/cancer" element={<CancerSupport />} />
 
         <Route path="/find-ngos" element={<FindNGOs />} />
         <Route path="/donate" element={<Donate />} />
@@ -87,6 +104,14 @@ function AppRoutes() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/contact" element={<Contact />} />
+        <Route
+          path="/profile"
+          element={
+            <RequireVolunteerAuth>
+              <Profile />
+            </RequireVolunteerAuth>
+          }
+        />
       </Routes>
     </>
   );

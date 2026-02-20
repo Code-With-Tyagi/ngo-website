@@ -1,14 +1,48 @@
 import express from "express";
+import multer from "multer";
 let router=express.Router();
 import {
   registerUser,
   loginUser,
   googleLogin,
+  getProfile,
+  updateProfile,
+  sendEmailVerificationOtp,
+  verifyEmailOtp,
+  changePassword,
   logoutUser,
   forgotPassword,
   resetPassword
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
+import profileUpload from "../middlewares/profileUpload.middleware.js";
+
+const handleProfileUpload = (req, res, next) => {
+  profileUpload.single("avatar")(req, res, (err) => {
+    if (!err) {
+      return next();
+    }
+
+    if (err instanceof multer.MulterError) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({
+          success: false,
+          message: "Profile image size cannot exceed 5MB"
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: err.message
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: err.message || "Profile image upload failed"
+    });
+  });
+};
 
 // Register a new user
 router.post("/register", registerUser);
@@ -20,6 +54,16 @@ router.post("/google-login", googleLogin);
 router.post("/forgot-password", forgotPassword);
 // Reset password
 router.post("/reset-password/:token", resetPassword);
+// Get current user profile (protected route)
+router.get("/profile", verifyToken, getProfile);
+// Update current user profile (protected route)
+router.put("/profile", verifyToken, handleProfileUpload, updateProfile);
+// Send email verification OTP (protected route)
+router.post("/email-verification/send-otp", verifyToken, sendEmailVerificationOtp);
+// Verify email OTP (protected route)
+router.post("/email-verification/verify-otp", verifyToken, verifyEmailOtp);
+// Change password (protected route)
+router.post("/change-password", verifyToken, changePassword);
 // Logout user (protected route)
 router.post("/logout", verifyToken, logoutUser);
 

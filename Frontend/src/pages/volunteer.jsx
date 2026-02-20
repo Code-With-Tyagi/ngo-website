@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 // If you are using react-router-dom:
 import { Link } from "react-router-dom";
 
@@ -15,6 +15,16 @@ const INTEREST_AREAS = [
   "Orphanage Support", "Elderly Care", "Digital Literacy", "Fundraising",
   "Field Work", "Content / Social Media"
 ];
+
+const INITIAL_FORM_DATA = {
+  fullName: "", email: "", phone: "", dob: "", gender: "", city: "", state: "",
+  interests: [], mode: "", availability: "", duration: "",
+  education: "", occupation: "", skills: "", experience: "",
+  idType: "", idNumber: "", idImage: null, emergencyName: "", emergencyPhone: "", bgCheck: false,
+  motivation: "", declaration: false
+};
+
+const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 
 // --- STYLES OBJECT ---
 const styles = {
@@ -352,14 +362,17 @@ const styles = {
     boxShadow: "0 4px 6px rgba(46, 125, 50, 0.2)",
     transition: "background 0.3s, transform 0.2s",
   },
-  successBox: {
-    padding: "80px 20px",
-    textAlign: "center",
+  submitBtnDisabled: {
+    backgroundColor: "#9ca3af",
+    cursor: "not-allowed",
+    boxShadow: "none",
   },
-  checkIcon: {
-    fontSize: "5rem",
-    color: "#2e7d32",
-    marginBottom: "20px",
+  successMsg: {
+    color: "#166534",
+    fontSize: "0.92rem",
+    marginTop: "10px",
+    textAlign: "center",
+    fontWeight: "600",
   },
   faqTitle: {
     textAlign: "center",
@@ -383,29 +396,11 @@ const styles = {
 };
 
 function Volunteer() {
-  // --- FORM STATE ---
-  const INITIAL_FORM_DATA = {
-    fullName: "", email: "", phone: "", dob: "", gender: "", city: "", state: "",
-    interests: [], mode: "", availability: "", duration: "",
-    education: "", occupation: "", skills: "", experience: "",
-    idType: "", idNumber: "", idImage: null, emergencyName: "", emergencyPhone: "", bgCheck: false,
-    motivation: "", declaration: false
-  };
-
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState({});
-  const [submitted, setSubmitted] = useState(false);
-
-  // Auto-dismiss success message
-  useEffect(() => {
-    if (submitted) {
-      const timer = setTimeout(() => {
-        setSubmitted(false);
-        setFormData(INITIAL_FORM_DATA);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [submitted]);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [applicationLocked, setApplicationLocked] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // --- HANDLERS ---
   const handleChange = (e) => {
@@ -428,6 +423,10 @@ function Volunteer() {
       setFormData({ ...formData, [name]: value });
     }
 
+    if (successMessage) {
+      setSuccessMessage("");
+    }
+
     if (errors[name] || errors.submit) {
       setErrors({ ...errors, [name]: "", submit: "" });
     }
@@ -436,7 +435,7 @@ function Volunteer() {
   const validateForm = () => {
     let newErrors = {};
     if (!formData.fullName.trim()) newErrors.fullName = "Full Name is required";
-    if (!formData.email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) newErrors.email = "Invalid email address";
+    if (!formData.email.match(/^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/)) newErrors.email = "Invalid email address";
     if (!formData.phone.match(/^[0-9]{10}$/)) newErrors.phone = "Enter a valid 10-digit number";
     if (!formData.dob) newErrors.dob = "Date of Birth is required";
     if (!formData.city.trim()) newErrors.city = "City is required";
@@ -445,25 +444,122 @@ function Volunteer() {
     if (!formData.motivation.trim()) newErrors.motivation = "Please tell us why you want to join";
     if (!formData.idType) newErrors.idType = "ID Type is required";
     if (!formData.idNumber.trim()) newErrors.idNumber = "ID Number is required";
+    if (!formData.idImage) newErrors.idImage = "ID proof is required";
+
+    if (formData.idImage) {
+      const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+      if (!allowedTypes.includes(formData.idImage.type)) {
+        newErrors.idImage = "Only JPG, PNG or PDF files are allowed";
+      } else if (formData.idImage.size > 5 * 1024 * 1024) {
+        newErrors.idImage = "ID proof must be up to 5MB";
+      }
+    }
+
     if (!formData.declaration) newErrors.declaration = "You must agree to the terms";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const buildVolunteerPayload = () => {
+    const payload = new FormData();
+
+    payload.append("fullName", formData.fullName.trim());
+    payload.append("email", formData.email.trim().toLowerCase());
+    payload.append("phone", formData.phone.trim());
+    payload.append("dob", formData.dob);
+    payload.append("city", formData.city.trim());
+    payload.append("state", formData.state);
+    formData.interests.forEach((interest) => payload.append("interests", interest));
+    payload.append("mode", formData.mode || "On-site");
+    payload.append("availability", formData.availability || "Flexible");
+    payload.append("occupation", formData.occupation.trim());
+    payload.append("education", formData.education || "");
+    payload.append("skills", formData.skills.trim());
+    payload.append("idType", formData.idType);
+    payload.append("idNumber", formData.idNumber.trim());
+    payload.append("emergencyName", formData.emergencyName.trim());
+    payload.append("emergencyPhone", formData.emergencyPhone.trim());
+    payload.append("bgCheck", String(Boolean(formData.bgCheck)));
+    payload.append("motivation", formData.motivation.trim());
+    payload.append("declaration", String(Boolean(formData.declaration)));
+
+    if (formData.idImage) {
+      payload.append("idImage", formData.idImage);
+    }
+
+    return payload;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      try {
-        // Simulation of API Call
-        await new Promise(resolve => setTimeout(resolve, 1500)); 
-        setSubmitted(true);
-        document.getElementById("apply-form").scrollIntoView({ behavior: "smooth" });
-      } catch (error) {
-        setErrors({ submit: "Network error. Please try again." });
+    setSuccessMessage("");
+
+    if (applicationLocked) {
+      const message = "You have already submitted a volunteer application.";
+      setErrors((prev) => ({ ...prev, submit: message }));
+      document.getElementById("apply-form")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    if (!validateForm()) {
+      document.getElementById("apply-form")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      const message = "Please log in again to submit your volunteer application.";
+      setErrors((prev) => ({ ...prev, submit: message }));
+      return;
+    }
+
+    setSubmitLoading(true);
+    setErrors((prev) => ({ ...prev, submit: "" }));
+
+    try {
+      const payload = buildVolunteerPayload();
+      const res = await fetch(`${API_BASE_URL}/api/volunteer/apply`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: payload,
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 201 && data?.success) {
+        setApplicationLocked(true);
+        setSuccessMessage(data.message || "Volunteer application submitted successfully.");
+        setFormData(INITIAL_FORM_DATA);
+        setErrors({});
+        document.getElementById("apply-form")?.scrollIntoView({ behavior: "smooth" });
+        return;
       }
-    } else {
-      document.getElementById("apply-form").scrollIntoView({ behavior: "smooth" });
+
+      if (res.status === 409) {
+        const message = data?.message || "You have already submitted a volunteer application.";
+        setApplicationLocked(true);
+        setErrors((prev) => ({ ...prev, submit: message }));
+        document.getElementById("apply-form")?.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+
+      if (res.status === 401) {
+        const message = data?.message || "Unauthorized. Please login first.";
+        setErrors((prev) => ({ ...prev, submit: message }));
+        return;
+      }
+
+      throw new Error(data?.message || "Unable to submit volunteer application right now.");
+    } catch (error) {
+      const message = error?.message || "Network error. Please try again.";
+      setErrors((prev) => ({ ...prev, submit: message }));
+      document.getElementById("apply-form")?.scrollIntoView({ behavior: "smooth" });
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
@@ -649,8 +745,7 @@ function Volunteer() {
             <p style={{margin: '10px 0 0', color: '#666'}}>Join the force of good. Please fill out the details below.</p>
           </div>
 
-          {!submitted ? (
-            <form style={styles.form} onSubmit={handleSubmit} noValidate>
+          <form style={styles.form} onSubmit={handleSubmit} noValidate>
 
               {/* SECTION 1: PERSONAL INFORMATION */}
               <div style={styles.fieldSet}>
@@ -793,8 +888,9 @@ function Volunteer() {
                   <div style={styles.inputGroup}>
                     <label style={styles.label}>Upload ID Proof (Image/PDF)</label>
                     <input type="file" name="idImage" accept="image/*,application/pdf" onChange={handleChange}
-                      style={{ ...styles.input, paddingTop: '10px' }} />
+                      style={{ ...styles.input, paddingTop: '10px', borderColor: errors.idImage ? 'red' : '#ddd' }} />
                     <small style={{ color: '#666', marginTop: '5px', fontSize: '0.8rem' }}>Max size: 5MB. Formats: JPG, PNG, PDF.</small>
+                    {errors.idImage && <span style={styles.errorMsg}>{errors.idImage}</span>}
                   </div>
                 </div>
                 <div style={styles.row}>
@@ -831,18 +927,20 @@ function Volunteer() {
                 </div>
               </div>
 
-              <button type="submit" style={styles.submitBtn} className="primary-btn">Submit Application</button>
+              <button
+                type="submit"
+                style={{
+                  ...styles.submitBtn,
+                  ...(submitLoading || applicationLocked ? styles.submitBtnDisabled : {}),
+                }}
+                className="primary-btn"
+                disabled={submitLoading || applicationLocked}
+              >
+                {submitLoading ? "Submitting..." : applicationLocked ? "Application Already Submitted" : "Submit Application"}
+              </button>
+              {successMessage && <div style={styles.successMsg}>{successMessage}</div>}
               {errors.submit && <div style={{ ...styles.errorMsg, marginTop: "10px", textAlign: 'center' }}>{errors.submit}</div>}
             </form>
-          ) : (
-            <div style={styles.successBox}>
-              <div style={styles.checkIcon}>✓</div>
-              <h3 style={{fontSize: '2rem', marginBottom: '10px'}}>Application Received!</h3>
-              <p style={{fontSize: '1.1rem', color: '#555'}}>Thank you, {formData.fullName}. Your Volunteer ID is <strong>#VOL-{Math.floor(Math.random() * 10000)}</strong>.</p>
-              <p style={{color: '#777'}}>We will contact you at {formData.email} within 48 hours.</p>
-              <button onClick={() => setSubmitted(false)} style={{...styles.secondaryBtn, borderColor: '#2e7d32', color: '#2e7d32', marginTop: '20px'}}>Submit Another</button>
-            </div>
-          )}
         </div>
       </section>
 
@@ -869,3 +967,4 @@ function Volunteer() {
 }
 
 export default Volunteer;
+
